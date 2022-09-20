@@ -22,14 +22,14 @@ class Solution
 public:
     std::vector<std::vector<std::string>> findDuplicate(std::vector<std::string> & paths)
     {
-        std::unordered_map<std::string, size_t> indices;
-        std::vector<std::vector<std::string>> ans;
+        std::unordered_map<std::string_view, std::vector<std::string>> contents;
 
-        for (std::string & p : paths)
+        for (std::string & p_ : paths)
         {
+            std::string_view p(p_);
             size_t space = p.find(' ');
             const auto directory = p.substr(0, space);
-            std::string r = p.substr(space + 1, p.size());
+            auto r = p.substr(space + 1, p.size());
 
             do
             {
@@ -37,29 +37,20 @@ public:
                 auto fnc = r.substr(0, space);
                 r = r.substr(space + 1, r.size());
                 
-                auto brc = fnc.find('(');
-                auto cnt = fnc.substr(brc, fnc.size() - 3);
+                const auto brc = fnc.find('(');
+                const auto cnt = fnc.substr(brc, fnc.size() - 3);
                 fnc = fnc.substr(0, brc);
 
-                std::string path = directory + '/' + fnc;
-                if (auto c = indices.find(cnt); c != indices.end())
-                {
-                    ans[c->second].push_back(path);
-                }
-                else
-                {
-                    indices[cnt] = ans.size();
-                    ans.push_back({path});
-                }
+                contents[cnt].push_back(std::string(directory) + '/' + std::string(fnc));
             }
             while (space != std::string::npos);
         }
 
-        auto m = std::partition(
-            ans.begin(), ans.end(),
-             [] (const std::vector<std::string> & v) { return v.size() > 1; }
-        );
-        ans.resize(std::distance(ans.begin(), m));
+        std::vector<std::vector<std::string>> ans;
+        ans.reserve(contents.size());
+        for (auto & c : contents) 
+            if (c.second.size() > 1) 
+                ans.push_back(std::move(c.second));
 
         return ans;
     }
